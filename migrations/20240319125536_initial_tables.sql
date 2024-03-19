@@ -1,0 +1,104 @@
+-- migrate:up
+
+-- function for maintaining updated_at timestamp
+CREATE OR REPLACE FUNCTION manage_table_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+	NEW.updated_at = now();
+	RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TABLE IF NOT EXISTS accounts(
+	id UUID PRIMARY KEY,
+	name VARCHAR(512),
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER accounts_updated_at BEFORE UPDATE
+ON accounts FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS users(
+	id UUID PRIMARY KEY,
+	email VARCHAR(320) NOT NULL,
+	name VARCHAR(512) NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER users_updated_at BEFORE UPDATE
+ON users FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS account_users(
+	account_id UUID NOT NULL REFERENCES accounts(id),
+	user_id UUID NOT NULL REFERENCES users(id),
+	PRIMARY KEY (account_id, user_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS webhooks(
+	id UUID PRIMARY KEY,
+	account_id UUID NOT NULL REFERENCES accounts(id),
+	name VARCHAR(512) NOT NULL,
+	"key" VARCHAR(512) NOT NULL,
+	static_data BYTEA DEFAULT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE(account_id, key)
+);
+
+CREATE TRIGGER webhooks_updated_at BEFORE UPDATE
+ON webhooks FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS target_status(
+	status VARCHAR(64) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS targets(
+	id UUID PRIMARY KEY,
+	webhook_id UUID NOT NULL REFERENCES webhooks(id),
+	url TEXT NOT NULL,
+	status VARCHAR(64) NOT NULL REFERENCES target_status(status),
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER targets_updated_at BEFORE UPDATE
+ON targets FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS hook_status(
+	status VARCHAR(64) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS hooks(
+	id UUID PRIMARY KEY,
+	webhook_id UUID NOT NULL REFERENCES webhooks(id),
+	status VARCHAR(64) NOT NULL REFERENCES hook_status(status),
+	payload BYTEA DEFAULT NULL,
+	run_at TIMESTAMP DEFAULT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER hooks_updated_at BEFORE UPDATE
+ON hooks FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
+
+-- migrate:down
+DROP TRIGGER IF EXISTS hooks_updated_at;
+DROP TRIGGER IF EXISTS targets_updated_at;
+DROP TRIGGER IF EXISTS users_updated_at;
+DROP TRIGGER IF EXISTS accounts_updated_at;
+
+DROP TABLE IF EXISTS hooks;
+DROP TABLE IF EXISTS hook_status;
+DROP TABLE IF EXISTS targets;
+DROP TABLE IF EXISTS target_status;
+DROP TABLE IF EXISTS webhooks;
+DROP TABLE IF EXISTS account_users;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS accounts;
