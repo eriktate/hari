@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: ./
+    image: hari
+    environment:
+      HARI_DB_HOST: postgres
+      HARI_DB_USER: hari
+      HARI_DB_PASSWORD: hari
+    ports:
+      - 9002:9001
+
+  postgres:
+    image: postgres:13.4
+    environment:
+      POSTGRES_DB: hari
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: hari
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/.docker-volumes/hari:/var/lib/postgresql/data
+
+  migrate:
+    depends_on:
+      - postgres
+    image: amacneil/dbmate:latest
+    environment:
+      DATABASE_URL: postgres://root:hari@postgres:5432/hari?sslmode=disable
+    volumes:
+      - "./migrations:/opt/app/migrations"
+    command: "-d /opt/app/migrations up"
