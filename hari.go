@@ -7,20 +7,6 @@ import (
 	"time"
 )
 
-// A Webhook holds all of the configuration required to run a webhook
-type Webhook struct {
-	ID         ID       `json:"id"`
-	AccountID  ID       `json:"accountId"`
-	Name       string   `json:"name"`
-	Key        string   `json:"key"`
-	Targets    []Target `json:"targets"`
-	StaticData *string  `json:"staticData"`
-
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
-}
-
 type TargetStatus string
 
 const (
@@ -42,6 +28,7 @@ func ParseTargetStatus(status string) (TargetStatus, error) {
 
 type Target struct {
 	ID        ID           `json:"id"`
+	WebhookID ID           `json:"webhookId"`
 	URL       url.URL      `json:"url"`
 	Status    TargetStatus `json:"status"`
 	CreatedAt time.Time    `json:"createdAt"`
