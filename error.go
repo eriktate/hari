@@ -7,6 +7,12 @@ const (
 	ErrCodeWebhookCreateReq
 	ErrCodeWebhookUpdate
 	ErrCodeWebhookUpdateReq
+	ErrCodeWebhookGet
+	ErrCodeWebhookGetReq
+	ErrCodeWebhookQuery
+	ErrCodeWebhookQueryReq
+	ErrCodeWebhookDelete
+	ErrCodeWebhookDeleteReq
 )
 
 // HariErrors are meant to be safe for public exposure. In most cases these are pre-canned messages and don't expose actual error details
@@ -32,6 +38,30 @@ var publicErrors = [...]HariError{
 	{
 		Code: ErrCodeWebhookUpdateReq,
 		Msg:  "Looks like your request might have been incorrect. Make sure you provide all required fields and try again",
+	},
+	{
+		Code: ErrCodeWebhookGet,
+		Msg:  "Looks like we weren't able to find your webhook. Please wait a few seconds and try again",
+	},
+	{
+		Code: ErrCodeWebhookGetReq,
+		Msg:  "Looks like your request might have been incorrect. Make sure you provide a valid Webhook ID and try again",
+	},
+	{
+		Code: ErrCodeWebhookQuery,
+		Msg:  "Looks like we weren't able to find your webhooks. Please wait a few seconds and try again",
+	},
+	{
+		Code: ErrCodeWebhookQueryReq,
+		Msg:  "Looks like your request might have been incorrect. Make sure you're providing valid query parameters and try again",
+	},
+	{
+		Code: ErrCodeWebhookDelete,
+		Msg:  "Looks like we weren't able to delete your webhook. Please wait a few seconds and try again",
+	},
+	{
+		Code: ErrCodeWebhookDeleteReq,
+		Msg:  "Looks like your request might have been incorrect. Make sure you're providing valid Webhook ID and try again",
 	},
 }
 

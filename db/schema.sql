@@ -132,11 +132,13 @@ CREATE TABLE public.users (
 CREATE TABLE public.webhooks (
     id uuid NOT NULL,
     account_id uuid NOT NULL,
+    active boolean DEFAULT true,
     name character varying(512) NOT NULL,
     key character varying(512) NOT NULL,
-    static_data bytea,
+    default_payload bytea,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp without time zone
 );
 
 
@@ -205,19 +207,18 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: webhooks webhooks_account_id_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.webhooks
-    ADD CONSTRAINT webhooks_account_id_key_key UNIQUE (account_id, key);
-
-
---
 -- Name: webhooks webhooks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.webhooks
     ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: account_id_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX account_id_key ON public.webhooks USING btree (account_id, key) WHERE (deleted_at IS NULL);
 
 
 --

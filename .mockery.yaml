@@ -1,0 +1,5 @@
+with-expecter: false
+packages:
+  github.com/eriktate/hari:
+    interfaces:
+      WebhookService:

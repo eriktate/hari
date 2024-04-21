@@ -17,13 +17,12 @@ type Config struct {
 func getRoutes(cfg Config) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello, World!"))
-	})
-
+	// webhook routes
 	r.Post("/webhook", HandleCreateWebhook(cfg.WebhookService))
 	r.Put("/webhook", HandleUpdateWebhook(cfg.WebhookService))
+	r.Get("/webhook/{id}", HandleGetWebhook(cfg.WebhookService))
+	r.Get("/webhook", HandleQueryWebhook(cfg.WebhookService))
+	r.Delete("/webhook/{id}", HandleDeleteWebhook(cfg.WebhookService))
 
 	return r
 }
@@ -32,6 +31,7 @@ func Serve(cfg Config) error {
 	return http.ListenAndServe(cfg.Addr, getRoutes(cfg))
 }
 
+// response writers
 func respond(w http.ResponseWriter, payload []byte) {
 	if _, err := w.Write(payload); err != nil {
 		log.Error().Err(err).Msg("failed to write response")

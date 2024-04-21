@@ -1,4 +1,37 @@
 -- migrate:up
+
+-- create app user
+DO
+$do$
+BEGIN
+	IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = 'hari') THEN
+		CREATE USER hari WITH ENCRYPTED PASSWORD 'hari';
+	END IF;
+END
+$do$;
+
+-- update access
+REVOKE ALL ON DATABASE hari FROM public;
+
+GRANT CONNECT
+ON DATABASE hari
+TO hari;
+
+-- GRANT USAGE
+-- ON SCHEMA public
+-- TO hari;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER
+ON TABLES
+TO hari;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT EXECUTE
+ON FUNCTIONS
+TO hari;
+
+-- create functions
 CREATE OR REPLACE FUNCTION manage_table_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -7,6 +40,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- create tables
 CREATE TABLE IF NOT EXISTS accounts(
 	id UUID PRIMARY KEY,
 	name VARCHAR(512),
@@ -40,13 +74,16 @@ CREATE TABLE IF NOT EXISTS account_users(
 CREATE TABLE IF NOT EXISTS webhooks(
 	id UUID PRIMARY KEY,
 	account_id UUID NOT NULL REFERENCES accounts(id),
+	active BOOLEAN DEFAULT TRUE,
 	name VARCHAR(512) NOT NULL,
 	"key" VARCHAR(512) NOT NULL,
-	static_data BYTEA DEFAULT NULL,
+	default_payload BYTEA DEFAULT NULL,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	UNIQUE(account_id, key)
+	deleted_at TIMESTAMP DEFAULT NULL
 );
+
+CREATE UNIQUE INDEX account_id_key ON webhooks (account_id, key) WHERE (deleted_at IS NULL);
 
 CREATE TRIGGER manage_updated_at BEFORE UPDATE
 ON webhooks FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
@@ -86,6 +123,7 @@ CREATE TABLE IF NOT EXISTS hooks(
 CREATE TRIGGER manage_updated_at BEFORE UPDATE
 ON hooks FOR EACH ROW EXECUTE PROCEDURE manage_table_updated_at();
 
+-- seed initial data
 INSERT INTO target_status
 	(status)
 VALUES
@@ -109,27 +147,6 @@ VALUES
 	('688eeae7-eae7-4712-b68d-8fbadd6bd4d5', 'Hari Test Account')
 ON CONFLICT DO NOTHING;
 
--- create app user
-DO
-$do$
-BEGIN
-	IF NOT EXISTS (
-		SELECT FROM pg_catalog.pg_user
-		WHERE usename = 'hari') THEN
-
-		CREATE USER hari WITH ENCRYPTED PASSWORD 'hari';
-		REVOKE CONNECT ON DATABASE hari FROM PUBLIC;
-
-		GRANT CONNECT
-		ON DATABASE hari
-		TO hari;
-
-		GRANT SELECT, INSERT, UPDATE, DELETE
-		ON ALL TABLES IN SCHEMA public
-		TO hari;
-	END IF;
-END
-$do$;
 
 -- migrate:down
 DROP TRIGGER IF EXISTS manage_updated_at ON hooks;
@@ -146,3 +163,6 @@ DROP TABLE IF EXISTS webhooks;
 DROP TABLE IF EXISTS account_users;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS accounts;
+REASSIGN OWNED BY hari TO root;
+DROP OWNED BY hari;
+DROP USER IF EXISTS hari;

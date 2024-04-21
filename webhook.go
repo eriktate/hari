@@ -11,13 +11,13 @@ type Webhook struct {
 	AccountID      ID       `json:"accountId"`
 	Name           string   `json:"name"`
 	Key            string   `json:"key"`
-	Targets        []Target `json:"targets"`
-	DefaultPayload *string  `json:"defaultPayload,omitEmpty"`
+	Targets        []Target `json:"targets,omitempty"`
+	DefaultPayload *string  `json:"defaultPayload,omitempty"`
 	Active         bool     `json:"active"`
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	DeletedAt *time.Time `json:"deletedAt,omitempty"`
 }
 
 type NewWebhook struct {
@@ -28,15 +28,17 @@ type NewWebhook struct {
 }
 
 type WebhookUpdates struct {
+	ID             ID      `json:"id"`
 	Name           *string `json:"name"`
 	DefaultPayload *string `json:"defaultPayload"`
 	Active         *bool   `json:"active"`
 }
 
 type WebhookQuery struct {
-	Active *bool   `json:"active"`
-	Name   *string `json:"name"`
-	Key    *string `json:"key"`
+	AccountID ID      `json:"-"`
+	Active    *bool   `json:"active"`
+	Name      *string `json:"name"`
+	Key       *string `json:"key"`
 }
 
 type WebhookService interface {
